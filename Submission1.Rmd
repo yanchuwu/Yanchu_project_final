@@ -1,0 +1,82 @@
+---
+title: "Submission 1"
+output: pdf_document
+date: "2024-07-29"
+---
+```{r}
+setwd("/Users/yanchuwu/Downloads") # set wd
+
+#read csv
+genes <- read.csv("QBS103_GSE157103_genes.csv",row.names = 1 ) # row name are coming from 1st colum of csv
+new_genes<- t(genes)
+#transform the rows to column
+```
+
+```{r}
+setwd("/Users/yanchuwu/Downloads") # set wd
+
+#read csv
+
+series_matrix <- read.csv("QBS103_GSE157103_series_matrix.csv")
+
+
+
+# merge data together in to one data setfile
+merged_data<- merge(new_genes, series_matrix, by.x = "row.names", by.y = "participant_id", all = TRUE)
+
+```
+
+
+```{r}
+
+```
+
+# categorical data
+sex
+icu_status
+#continues
+age
+#gene
+A1BG
+
+#gene expression
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+```
+
+#histogram
+```{r}
+
+
+library(ggplot2)
+ggplot(merged_data,aes(x = A1BG)) + 
+  geom_histogram(binwidth = 0.1, fill = "blue", alpha = 0.7) +
+  labs(title = "Gene Expression", x = "gene a1bg", y = "Frequency")
+  
+```
+
+
+```{r}
+
+library(ggplot2)
+ggplot(merged_data,aes(x = age ,y = A1BG ,color = age)) + # The + is how we communicate to ggplot2 that we aren't done adding elements to the plot
+  # Add points to our scatter plot
+  geom_point()
+
+```
+
+
+#asking for to visualize , gene as y axis, x axis has 2 categorical, 1 is color, and i 
+
+```{r}
+ggplot(merged_data,aes(x = sex,y = A1BG, fill = icu_status)) +
+  # Add box plot
+  geom_boxplot() +
+  # Change labels
+  labs(x = 'age',y = 'sex',color = 'measure') 
+
+```
+
