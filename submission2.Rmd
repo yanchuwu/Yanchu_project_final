@@ -1,0 +1,87 @@
+---
+title: "Submission 2"
+output:
+  pdf_document: default
+  html_document: default
+date: "2024-08-06"
+---
+```{r}
+setwd("/Users/yanchuwu/Downloads") # set wd
+
+#read csv
+genes <- read.csv("QBS103_GSE157103_genes.csv",row.names = 1 ) # row name are coming from 1st colum of csv
+new_genes<- t(genes)
+#transform the rows to column
+
+setwd("/Users/yanchuwu/Downloads") # set wd
+
+#read csv
+
+series_matrix <- read.csv("QBS103_GSE157103_series_matrix.csv")
+
+
+
+# merge data together in to one data set file
+merged_data<- merge(new_genes, series_matrix, by.x = "row.names", by.y = "participant_id", all = TRUE)
+merged_data$age <- as.numeric(merged_data$age)
+
+```
+
+
+Build a function to create the plots you made for Presentation 1, incorporating any feedback you received on your submission. Your functions should take the following input: (1) the name of the data frame, (2) a list of 1 or more gene names, (3) 1 continuous covariate, and (4) two categorical covariates (10 pts)
+Select 2 additional genes (for a total of 3 genes) to look at and implement a loop to generate your figures using the function you created (10 pts)
+
+```{r}
+library(ggplot2)
+
+library(tidyverse)
+library(ggpubr)
+
+submission2_plot <- function(data, gene_name , continuous_covariate , categorical_covariates1, categorical_covariates2){
+  
+    
+  
+  # Histogram
+    histogram <- ggplot(data, aes_string(x = gene_name)) + 
+    geom_histogram(binwidth = 0.1, fill = "blue", alpha = 0.7) +
+    labs( x = gene_name, y = "Frequency")
+  
+    
+    #scatterplot
+    data[[gene_name]] <- as.numeric(data[[gene_name]])
+    
+    scatter_plot <- ggplot(data, aes_string(x = continuous_covariate, y = gene_name, color = continuous_covariate)) + 
+    geom_point() +
+    labs(title = "gene scatter plot",
+         x = continuous_covariate,
+         y = gene_name)
+    
+    
+    
+    box_plot <- ggplot(data,aes_string(x = categorical_covariates1 ,y = gene_name, fill = categorical_covariates2)) +
+     # Add box plot
+     geom_boxplot() +
+    # Change labels
+     labs(x = categorical_covariates1,y = gene_name,color = categorical_covariates2 ) 
+
+    plot(histogram)
+    plot(scatter_plot)
+    plot(box_plot)
+    
+  }
+
+submission2_plot(data = merged_data, gene_name = 'A1BG', continuous_covariate = 'age', categorical_covariates1 = 'sex', categorical_covariates2 = 'icu_status')
+
+
+```
+
+```{r}
+
+genes <- c('A1BG', 'A2M', 'AAAS') 
+
+for (gene in genes) {
+  submission2_plot(data = merged_data, gene_name = gene, continuous_covariate = 'age', categorical_covariates1 = 'sex', categorical_covariates2 = 'icu_status')
+}
+
+```
+
