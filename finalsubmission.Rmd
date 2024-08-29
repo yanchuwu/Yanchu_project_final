@@ -1,0 +1,273 @@
+---
+title: "Final Submission"
+output: pdf_document
+date: "2024-07-29"
+---
+```{r}
+setwd("/Users/yanchuwu/Downloads") # set wd
+
+#read csv
+genes <- read.csv("QBS103_GSE157103_genes.csv",row.names = 1 ) # row name are coming from 1st colum of csv
+new_genes<- t(genes)
+#transform the rows to column
+```
+
+```{r}
+setwd("/Users/yanchuwu/Downloads") # set wd
+
+#read csv
+
+series_matrix <- read.csv("QBS103_GSE157103_series_matrix.csv")
+
+
+
+# merge data together in to one data set file
+merged_data<- merge(new_genes, series_matrix, by.x = "row.names", by.y = "participant_id", all = TRUE)
+
+```
+
+# categorical data
+sex
+icu_status
+#continues
+age
+#gene
+A1BG
+
+#gene expression
+
+```{r}
+library(dplyr)
+library(ggplot2) # required library
+
+```
+
+#histogram
+```{r}
+# I picked the gene A1BG as my x 
+
+library(ggplot2)
+my_histogram<-ggplot(merged_data,aes(x = A1BG)) + 
+  geom_histogram(binwidth = 0.1, fill = "blue", alpha = 0.7) +
+  labs(title = "Gene(A1BG) Expression Histogram", x = "Gene(A1BG)", y = "Frequency")
+
+my_histogram
+  
+```
+#save my histogram
+```{r}
+ggsave("my_histogram.pdf", plot = my_histogram, width = 8, height = 6)
+```
+
+
+
+#scatterplot
+```{r}
+# age is my continuous covariate 
+library(ggplot2)
+merged_data$age <- as.numeric(merged_data$age)
+my_scatterplot<-ggplot(merged_data,aes(x = age ,y = A1BG ,color = age)) + # The + is how we communicate to ggplot2 that we aren't done adding elements to the plot
+  # Add points to our scatter plot
+  
+  geom_point()+
+  
+  labs(x = 'Age(year)',y = 'Gene(A1BG)',color = 'Age(year)', title = 'Age vs Gene(A1BG) scatterplot' ) 
+
+my_scatterplot
+
+#age and gene expression does not have strong correlation, no very obvious trend 
+```
+```{r}
+ggsave("my_scatterplot.pdf", plot = my_scatterplot, width = 8, height = 6)
+```
+
+
+#asking for to visualize , gene as y axis, x axis has 2 categorical, 1 is color, and i 
+
+```{r}
+#gene expression separated by both categorical covariates(sex as x, fill as icu_status)
+#boxplot
+my_boxplot<-ggplot(merged_data,aes(x = sex,y = A1BG, fill = icu_status)) +
+  # Add box plot
+  geom_boxplot() +
+  # Change labels
+  labs(x = 'age',y = 'sex',color = 'icustatus', title = 'age vs sex boxplot' ) 
+# white line is a median, bos size shows the variability
+my_boxplot
+```
+save m box plot
+```{r}
+ggsave("my_boxplot.pdf", plot = my_boxplot, width = 8, height = 6)
+```
+
+
+
+#Generate a heatmap (5 pts)
+Heatmap should include at least 10 genes
+Include tracking bars for the 2 categorical covariates in your boxplot
+Heatmaps should include clustered rows and columns
+
+
+```{r}
+library(pheatmap)
+library(dbplyr)
+# Subset the genes
+gene_subset<-c("A1BG","A2M","A4GNT","AAAS","AACS","AAGAB","AAK1","AAMP","AANAT","AAR2")
+
+gene_data_subset <- merged_data %>% select(gene_subset )
+
+gene_data <- as.data.frame(t(gene_data_subset))
+
+
+
+gene_data<-gene_data[-6]
+print(gene_data)
+
+annotation_data <- as.data.frame(merged_data %>% select("sex","disease_status"))  
+
+print(annotation_data)
+
+annotation_data <-annotation_data[-7,]
+
+
+row.names(annotation_data)<-colnames(gene_data)
+
+
+# make the annotation data matches the cleaned data
+
+
+
+ annotationColors <- list(sex = c('female' = 'purple',
+                                     'male' = 'blue',                                  'unknown' = 'red'),
+                        icu_status = c('yes' = 'red',
+                                        'no' = 'pink'))
+
+# heatmap
+my_pheatmap<-pheatmap(gene_data,
+         clustering_rows= T,
+         clustering_cols = T,
+         show_colnames = FALSE,
+         annotation_col = annotation_data)
+         #annotation_colors = annotationColors)
+
+my_pheatmap
+
+ggsave("my_pheatmap.pdf", plot = my_pheatmap, width = 8, height = 6)
+
+```
+
+#summarry table
+Stratifying by one of your categorical variables
+Tables should report n (%) for categorical variables
+Tables should report mean (sd) or median [IQR] for continuous variables
+
+```{r}
+merged_data<- merge(new_genes, series_matrix, by.x = "row.names", by.y = "participant_id", all = TRUE)
+
+```
+#categorical variable:sex,icu_status
+
+Tables should report n (%) for categorical variables
+
+
+```{r}
+#data preparation
+library(dplyr)
+library(table1)
+
+merged_data2 <- na.omit(merged_data)
+
+merged_data2_filter <- merged_data2 %>% filter(!is.na(sex) & !is.na(icu_status) &! is.na(disease_status) &!is.na(age) &! is.na(ventilator.free_days) &! is.na(hospital.free_days_post_45_day_followup) &age==as.integer(age))
+
+merged_data2_filtered <- merged_data2 %>% filter(sex != " unknown")
+
+
+```
+
+```{r}
+# Assign labels to variables for better presentation in the table
+label(merged_data2_filtered$sex) <- "Sex"
+label(merged_data2_filtered$icu_status) <- "ICU Status"
+label(merged_data2_filtered$age) <- "Age"
+label(merged_data2_filtered$ventilator.free_days ) <- "Ventilator free Days"
+label(merged_data2_filtered$hospital.free_days_post_45_day_followup) <- " hospital free days post 45 day followup"
+# Convert variables to numeric if they are not already
+merged_data2_filtered$age <- as.numeric(merged_data2_filtered$age)
+merged_data2_filtered$ventilator.free_days <- as.numeric(merged_data2_filtered$ventilator.free_days)
+merged_data2_filtered$hospital.free_days_post_45_day_followup <- as.numeric(merged_data2_filtered$hospital.free_days_post_45_day_followup)
+
+merged_data2_filtered <- merged_data2_filtered %>%
+  filter(!is.na(age) & !is.na(ventilator.free_days) & !is.na(hospital.free_days_post_45_day_followup))
+
+
+# Define caption and footnote
+caption <- "Table 1: Categoritcal Covariates and Continues Covariates Stratified by Status"
+footnote <- "the result inculdes n (%) for categorical variables and mean (sd) or median [IQR] for continuous variables."
+
+
+# Create the descriptive table stratified by 'status'
+IQR_format <- c(
+  "Median [IQR]" = "MEDIAN [IQR]"
+)
+
+table1(~ sex + icu_status + age + ventilator.free_days + hospital.free_days_post_45_day_followup | disease_status, 
+       data=merged_data2_filtered, overall=c(left="Total"), caption=caption, footnote=footnote,render.continuous = IQR_format)
+```
+distribution
+```{r}
+
+library(ggplot2)
+ggplot(merged_data2_filtered,aes(x = age)) + 
+  geom_histogram(binwidth = 5, fill = "blue", alpha = 0.7)
+```
+
+
+```{r}
+library(ggplot2)
+ggplot(merged_data2_filtered,aes(x = ventilator.free_days)) + 
+  geom_histogram(binwidth = 5, fill = "blue", alpha = 0.7)
+```
+
+#Distribution of hospital free days post 45 day followup
+
+```{r}
+library(ggplot2)
+ggplot(merged_data2_filtered,aes(x = hospital.free_days_post_45_day_followup)) + 
+  geom_histogram(binwidth = 5, fill = "blue", alpha = 0.7)
+```
+
+#another plot
+
+```{r}
+# Define overall plot including the data set name and the variables you want to look at within that data frame
+my_rugplot<-ggplot(merged_data,aes(x = as.numeric(age),y = ventilator.free_days,color = disease_status)) + # The + is how we communicate to ggplot2 that we aren't done adding elements to the plot
+  # Add loess curve with shaded error 
+  geom_smooth(method = loess) +
+   labs(x = 'Age(year)',y = 'ventilator Free days',color = 'Disease Status(covid-19)', title = 'Age(year) vs. Ventilator Free Days' ) +
+  # Add rug
+  geom_rug()
+
+
+my_rugplot
+
+ggsave("my_rugplot.pdf", plot = my_rugplot, width = 8, height = 6)
+
+```
+
+
+```{r}
+citation("tidyverse")
+```
+
+
+```{r}
+citation
+```
+
+
+
+
+
+
+
+
